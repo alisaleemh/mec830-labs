@@ -1,6 +1,7 @@
 # mec830-labs
 
-### Calibration Values - MECHBOT 6
+
+### Calibration Values - Line Sensors - MECHBOT 6
 
 
 | Tables        | Left          | Left Center  | Right Center | Right  |
