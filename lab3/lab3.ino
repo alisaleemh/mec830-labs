@@ -47,14 +47,15 @@ void loop(){
   }
   
   evshield.bank_a.motorStop (SH_Motor_1, SH_Next_Action_Float);
+  
     
   while ( evshield.getButtonState(BTN_RIGHT) == true ) {
 
     evshield.bank_a.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Medium, 90, SH_Completion_Wait_For, SH_Next_Action_Brake);
   
   }
-
-   delay(1000);
-
-
-  }
+  
+  evshield.bank_a.motorStop (SH_Motor_1, SH_Next_Action_Float);
+  
+  
+ }
