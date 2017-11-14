@@ -10,7 +10,7 @@ int main(void)   {
 
   //set PC4 and PC5 as inputs
   DDRC &= ~((1<<PC4)|(1<<PC5));
-  PORTC |= ((1<<PC4)|(1<<PC5));
+  PORTC &= ~((1<<PC4)|(1<<PC5));
 
 
   //setting motors as output
@@ -37,7 +37,7 @@ int main(void)   {
     }
 
 
-    
+
     if (PINC & (1<<PC5))
     {
       clrLCD();
@@ -49,5 +49,3 @@ int main(void)   {
 
   }
 }
-
-

@@ -17,19 +17,15 @@ int main (void){
 
   while(1){
 
-    while(n){
+ 
       clrLCD();
-      value = analog(n-1);
+      value = analog(n);
       lcdPrint("channel");
-      lcdPrintDec(n-1);
+      lcdPrintDec(n);
       lcdPrint(" = ");
       moveLCDCursor(16);
       lcdPrintDec(value);
       delay_ms(1000);
-      if ((PIND & (1<<PD3))==0)
-      {delay_ms(500)
-      ;n++;}
-      if(n>7) {n=1;}
-    }
+ 
   }
 }

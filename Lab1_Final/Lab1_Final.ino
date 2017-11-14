@@ -2,91 +2,167 @@
 #include <USART.h>
 #include <avr/io.h>
 
-int vel =750, tvel = 700, lsen_hi = 800, lsen_low = 600;
+int vel = 300, tvel = 500, lsen_hi = 800, lsen_low = 600;
+int error = 0 ; int previousError = 0 ;
+double Kp = 90 ; double Kd = 20 ; double Ki = 0.00001 ;
+int motorSpeed = 300 ;
+int leftMotorSpeed = 0, rightMotorSpeed = 0;
+double P ;
+double I ;
+double D ;
+double PIDvalue;
 
-void moveStraight() ;
+/* 2-d array [ sensor1[on-line, not-on-line, edge], sensor2[on-line, not-on-line, edge]// */
+int sensorCalib[4][3] = {
+    { 800, 450, 600 },
+    { 800, 450, 600 },
+    { 800, 450, 600 },
+    { 800, 600, 600 }
+};
+
+// line sensor array
+int lineSensor[4] ;
+
+void moveStraight();
 void turnRight();
 void turnLeft();
+void initialize();
+void readLineSensor();
+void calculatePidError();
+double calculatePidValue();
+void PidMotorControl(double PIDvalue);
 
-  
+int main(void)
+{
+    initialize();
 
-int main (void){
+    while (1) {
+        readLineSensor();
+        calculatePidError();
+        PidMotorControl(calculatePidValue());
+    }
 
-    //ADC analog sensors
-    DDRD &= ~(1<<PD3);    
+}
+
+void calculatePidError () {
+    // line sensors = 1 1 1 1
+    if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
+        error = 10 ;
+    }
+    // line sensors = 1 0 0 1
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
+        error = 10 ;
+    }
+    // line sensors = 1 1 0 1
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
+        error = 10 ;
+    }
+    // line sensors = 1 0 1 1
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
+        error = 10 ;
+    }
+
+    // line sensors = 1 0 0 0
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
+        error = -3;
+    }
+    // line sensors = 1 1 0 0
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
+        error = -2;
+    }
+    // line sensors = 0 1 0 0
+    else if (lineSensor[0] < sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2] ) {
+        error = -1;
+    }
+
+    // line sensors = 0 1 1 0
+    else if (lineSensor[0] < sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
+        error = 0;
+    }
+
+    // line sensors = 0 0 0 1
+    else if (lineSensor[0] < sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2]) {
+        error = 3;
+    }
+    // line sensors = 0 0 1 1
+    else if (lineSensor[0] < sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2]) {
+        error = 2;
+    }
+    // line sensors = 0 1 0 0
+    else if (lineSensor[0] < sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2] ) {
+        error = -1;
+    }
+}
+
+double calculatePidValue () {
+    P = error;
+    I = I + error;
+    D = error-previousError;
+    PIDvalue = (Kp*P) + (Ki*I) + (Kd*D);
+    previousError = error;
+
+    return PIDvalue ;
+}
+
+void PidMotorControl(double PIDvalue) {
+
+    if (PIDvalue == 10)
+    {
+
+        leftMotorSpeed = 0;
+        rightMotorSpeed = 0;
+        motor(leftMotorSpeed, rightMotorSpeed);
+        beep(3000, 3000000);
+        moveLCDCursor(0);
+        lcdPrint("Stopped");
+    }
+    else {
+        leftMotorSpeed = motorSpeed + PIDvalue;
+        rightMotorSpeed = motorSpeed - PIDvalue;
+
+        constrain(leftMotorSpeed, 0, 1000);
+        constrain(rightMotorSpeed, 0 , 1000);
+
+        motor(leftMotorSpeed, rightMotorSpeed);
+    }
+
+}
+
+
+
+
+void initialize()
+{
+    //ADC lineSensor sensors
+    DDRD &= ~(1 << PD3);
     PORTD |= 0b00000000;
 
     //setting bumper button as input
-    DDRD &= ~(1<<PD4); 
-    PORTD |= (1<<PD4);
+    DDRD &= ~(1 << PD4);
+    PORTD |= (1 << PD4);
 
     //setting motors as output
-    DDRB |= ((1<<PB1)|(1<<PB2));   
-    PORTB &= ~((1<<PB1)|(1<<PB2));  
-  
+    DDRB |= ((1 << PB1) | (1 << PB2));
+    PORTB &= ~((1 << PB1) | (1 << PB2));
+
     initSoftSerial();
     initMotor();
     setLCDBackLight(255);
     moveLCDCursor(0);
     initADC();
-
-
-
-        
-while(1){
-   
-   clrLCD();
-    
-   while (analog(1)>lsen_hi && analog(2)>lsen_hi){
-    moveStraight();
-   }
-    
-   clrLCD();
-    
-   if (analog(0)>lsen_hi && analog(1)>lsen_hi){
-    turnLeft();
-   
-   }
-    
-   clrLCD();
-  
-   if (analog(2)>lsen_hi && analog(3)>lsen_hi){
-    turnRight();  
-   }   
-   
-   clrLCD();
-       
-   if (analog(3)>lsen_hi && analog(0)>lsen_hi){
-    stopIntersection();
-   }
-}
 }
 
-void stopIntersection() {
-  motor(0,0);
-  beep(3000,3000000);
-  moveLCDCursor(0);
-  lcdPrint("Stopped");
+void readLineSensor()
+{
+    for (int i=0 ; i <= 3 ; i++) {
+        lineSensor[i] = analog(i);
+    }
 }
-
-void moveStraight () {
-    motor(vel,vel);
+void stopIntersection()
+{
+    motor(0, 0);
+    beep(3000, 3000000);
     moveLCDCursor(0);
-    lcdPrint("Straight");
+    lcdPrint("Stopped");
     return NULL;
 }
-
-void turnRight () {
-      motor(tvel,0);
-      moveLCDCursor(0);
-      lcdPrint("Right");
-      return NULL;
-}
-void turnLeft () {
-      motor(0,tvel);
-      moveLCDCursor(0);
-      lcdPrint("Left");
-      return NULL;
-}
-
-
