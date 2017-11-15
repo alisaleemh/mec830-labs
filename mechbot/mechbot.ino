@@ -42,6 +42,7 @@ void calculatePidError();
 double calculatePidValue();
 void PidMotorControl(double PIDvalue);
 void initializeCom();
+void test();
 
 int main(void)
 {
@@ -97,18 +98,6 @@ void calculatePidError () {
      else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] < sensorCalib[1][0] && lineSensor[2] < sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
          error = 10 ;
      }
-    // // line sensors = 1 1 0 1
-    // else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
-    //     stopIntersection() ;
-    //     error = 10 ;
-    //
-    // }
-    // // line sensors = 1 0 1 1
-    // else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
-    //     stopIntersection() ;
-    //     error = 10 ;
-    //
-    // }
 
     //line sensors = 1 0 0 0
     if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
@@ -184,27 +173,29 @@ void readLineSensor()
 }
 void stopIntersection()
 {
+    clrLCD();
     motor(0, 0);
-    _delay_ms(5000);
-    sendToEV(1);
+    sendToEV(getCanDirection());
+    _delay_ms(10000);
+
+    idle();
 
 
 
     moveLCDCursor(0);
     lcdPrint("Stopped");
     motor(500,500);
-    _delay_ms(600);
-    clrLCD();
+    _delay_ms(800);
 
 }
 
 int getCanDirection()
 {
     if (distanceSensor[0] >= distanceCalib[0] && distanceSensor[1] < distanceCalib[1]) {
-        return CAN_LEFT ;
+        return 0 ;
     }
     else if (distanceSensor[0] <= distanceCalib[0] && distanceSensor[1] >= distanceCalib[1]) {
-        return CAN_RIGHT ;
+        return 1 ;
     }
 
 }
@@ -213,22 +204,25 @@ void idle()
 {
     PORTC &= ~(1 << PC4);
     PORTC &= ~(1 << PC5);
+    return NULL;
 }
 
+void test()
+{
+    PORTC &= ~(1 << PC4);
+    PORTC |= (1 << PC5);
+}
 void sendToEV(int canDirection)
 {
-    if (canDirection == CAN_LEFT) {
+    if (canDirection == 0) {
         PORTC &= ~(1 << PC4);
         PORTC |= (1 << PC5);
     }
-    if (canDirection == CAN_RIGHT) {
+    if (canDirection == 1) {
         PORTC |= (1 << PC4);
         PORTC &= ~(1 << PC5);
     }
 
-    _delay_ms(100);
-
-    idle();
 
 }
 

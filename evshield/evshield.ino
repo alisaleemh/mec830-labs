@@ -14,11 +14,11 @@ void leftCan() {
     1, 90, SH_Completion_Wait_For,
     SH_Next_Action_Brake
   );
-    delay(1000);
+    _delay_ms(1000);
 
   evshield.bank_a.motorRunRotations(SH_Motor_1,
     SH_Direction_Reverse,
-    10, 1, SH_Completion_Wait_For,
+    10, 2, SH_Completion_Wait_For,
     SH_Next_Action_Brake
   );
 
@@ -26,7 +26,7 @@ void leftCan() {
 
 
 
-  delay(1000);
+  _delay_ms(1000);
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
     SH_Direction_Forward,
@@ -36,13 +36,15 @@ void leftCan() {
 
 
 
-  delay (1000);
+   _delay_ms(1000);
 
   evshield.bank_a.motorRunRotations(SH_Motor_1,
     SH_Direction_Forward,
-    SH_Speed_Slow, 1, SH_Completion_Wait_For,
+    10, 2, SH_Completion_Wait_For,
     SH_Next_Action_Brake
   );
+
+  _delay_ms(5000);
 }
 
   void rightCan() {
@@ -53,12 +55,12 @@ void leftCan() {
     SH_Next_Action_Brake
   );
 
-      delay(1000);
+      _delay_ms(1000);
 
 
     evshield.bank_a.motorRunRotations(SH_Motor_1,
       SH_Direction_Forward,
-      10, 1, SH_Completion_Wait_For,
+      10, 2, SH_Completion_Wait_For,
       SH_Next_Action_Brake
     );
 
@@ -66,7 +68,7 @@ void leftCan() {
 
 
 
-  delay(1000);
+  _delay_ms(1000);
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
     SH_Direction_Forward,
@@ -74,21 +76,24 @@ void leftCan() {
     SH_Next_Action_Brake
   );
 
-    delay (1000);
+    _delay_ms(1000);
 
     evshield.bank_a.motorRunRotations(SH_Motor_1,
       SH_Direction_Reverse,
-      10, 1, SH_Completion_Wait_For,
+      10, 2, SH_Completion_Wait_For,
       SH_Next_Action_Brake
     );
+
+    _delay_ms(5000);
+
 
   }
 
 void setup()   {
 
     //set up the Rx pin as input (PB0)
-    DDRB &= ~((1 << PB0) | (1 << PB1));
-    PORTB &= ~((1<<PB0) | (1<<PB1));
+    DDRB  &= ~((1 << PB0) | (1 << PB1));
+    PORTB &= ~((1 << PB0) | (1 << PB1));
 
     //set up hardware protocol to the EVshield
     evshield.init( SH_HardwareI2C );
@@ -101,13 +106,13 @@ void setup()   {
 
 void loop(){
 
-    while (PINB & (1<<PB0)) {
+    if (PINB & (1<<PB0)) {
         leftCan();
     }
-    while (PINB & (1<<PB1)) {
+    if (PINB & (1<<PB1)) {
         rightCan();
     }
-    delay(1000);
+    _delay_ms(1000);
     evshield.ledSetRGB(0,0,0);
 
 
