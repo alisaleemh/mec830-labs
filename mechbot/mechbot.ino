@@ -9,6 +9,7 @@
 int vel = 300, tvel = 500, lsen_hi = 800, lsen_low = 600;
 int error = 0 ; int previousError = 0 ;
 
+
 double Kp = 150 ; double Kd = 5 ; double Ki = 0.00001 ;
 int motorSpeed = 400 ;
 int leftMotorSpeed = 0, rightMotorSpeed = 0;
@@ -17,7 +18,9 @@ double I ;
 double D ;
 double PIDvalue;
 
-
+int canDirection = 2;
+char canDirectionChar[12];
+int intersections = 0;
 /* 2-d array [ sensor1[on-line, not-on-line, edge], sensor2[on-line, not-on-line, edge]// */
 int sensorCalib[4][3] = {
     { 900, 600, 600 },
@@ -26,7 +29,7 @@ int sensorCalib[4][3] = {
     { 900, 800, 800 }
 };
 
-int distanceCalib[2] = {340, 300} ;
+int distanceCalib[2] = {250, 250} ;
 
 
 // line sensor array
@@ -42,6 +45,7 @@ void calculatePidError();
 double calculatePidValue();
 void PidMotorControl(double PIDvalue);
 void initializeCom();
+int getCanDirection();
 
 int main(void)
 {
@@ -97,18 +101,6 @@ void calculatePidError () {
      else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] < sensorCalib[1][0] && lineSensor[2] < sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
          error = 10 ;
      }
-    // // line sensors = 1 1 0 1
-    // else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] >= sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
-    //     stopIntersection() ;
-    //     error = 10 ;
-    //
-    // }
-    // // line sensors = 1 0 1 1
-    // else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] >= sensorCalib[2][2] && lineSensor[3] >= sensorCalib[3][2] ) {
-    //     stopIntersection() ;
-    //     error = 10 ;
-    //
-    // }
 
     //line sensors = 1 0 0 0
     if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
@@ -181,30 +173,46 @@ void readLineSensor()
     for (int i=0 ; i <= 3 ; i++) {
         lineSensor[i] = analog(i);
     }
+    return;
 }
 void stopIntersection()
 {
+    clrLCD();
     motor(0, 0);
-    _delay_ms(5000);
-    sendToEV(1);
+    _delay_ms(50);
+    canDirection = getCanDirection();
+
+    if (canDirection == 0) { lcdPrint("Can on left");}
+    else if (canDirection == 1) { lcdPrint("Can on right");}
+    sendToEV(canDirection);
+    _delay_ms(10000);
+    canDirection = -1;
+
+    idle();
+
 
 
 
     moveLCDCursor(0);
-    lcdPrint("Stopped");
     motor(500,500);
-    _delay_ms(600);
-    clrLCD();
+    _delay_ms(800);
+
+    intersections++;
+
+
 
 }
 
 int getCanDirection()
 {
     if (distanceSensor[0] >= distanceCalib[0] && distanceSensor[1] < distanceCalib[1]) {
-        return CAN_LEFT ;
+        return 0 ;
     }
     else if (distanceSensor[0] <= distanceCalib[0] && distanceSensor[1] >= distanceCalib[1]) {
-        return CAN_RIGHT ;
+        return 1 ;
+    }
+    else {
+        return -1;
     }
 
 }
@@ -213,23 +221,27 @@ void idle()
 {
     PORTC &= ~(1 << PC4);
     PORTC &= ~(1 << PC5);
+    return NULL;
 }
+
 
 void sendToEV(int canDirection)
 {
-    if (canDirection == CAN_LEFT) {
+    if (canDirection == 1) {
         PORTC &= ~(1 << PC4);
         PORTC |= (1 << PC5);
     }
-    if (canDirection == CAN_RIGHT) {
+    else if (canDirection == 0) {
         PORTC |= (1 << PC4);
         PORTC &= ~(1 << PC5);
     }
-
-    _delay_ms(100);
-
-    idle();
-
+    // else if (canDirection == 2) {
+    //     PORTC |= (1 << PC4);
+    //     PORTC |= (1 << PC5);
+    // }
+    else {
+        return;
+    }
 }
 
 void readDistanceSensor()
