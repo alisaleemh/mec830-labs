@@ -177,13 +177,22 @@ void readLineSensor()
 }
 void stopIntersection()
 {
+    intersections++;
     clrLCD();
     motor(0, 0);
     _delay_ms(50);
-    canDirection = getCanDirection();
+    // intersection is even to it is at a dropoff intersection
+    if (intersections % 2 =! 0) {
+      canDirection = 2;
+    }
+    // intersections is at a pickup location
+    else if (intersections % 2 == 0) {
+      canDirection = getCanDirection();
+    }
 
     if (canDirection == 0) { lcdPrint("Can on left");}
     else if (canDirection == 1) { lcdPrint("Can on right");}
+    else if (canDirection == 2) { lcdPrint("Can on dropoff");}
     sendToEV(canDirection);
     _delay_ms(10000);
     canDirection = -1;
@@ -197,7 +206,6 @@ void stopIntersection()
     motor(500,500);
     _delay_ms(800);
 
-    intersections++;
 
 
 
@@ -235,10 +243,10 @@ void sendToEV(int canDirection)
         PORTC |= (1 << PC4);
         PORTC &= ~(1 << PC5);
     }
-    // else if (canDirection == 2) {
-    //     PORTC |= (1 << PC4);
-    //     PORTC |= (1 << PC5);
-    // }
+    else if (canDirection == 2) {
+        PORTC |= (1 << PC4);
+        PORTC |= (1 << PC5);
+    }
     else {
         return;
     }
