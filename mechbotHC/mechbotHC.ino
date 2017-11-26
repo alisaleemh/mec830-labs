@@ -1,4 +1,4 @@
-#include <mechbotShield.h>
+    #include <mechbotShield.h>
 #include <USART.h>
 #include <avr/io.h>
 #include <util/delay.h>
@@ -6,12 +6,11 @@
 #define CAN_LEFT 0
 #define CAN_RIGHT 1
 
-int vel = 300, tvel = 500, lsen_hi = 800, lsen_low = 600;
 int error = 0 ; int previousError = 0 ;
 
 
 double Kp = 150 ; double Kd = 5 ; double Ki = 0.00001 ;
-int motorSpeed = 350 ;
+int motorSpeed = 300 ;
 int leftMotorSpeed = 0, rightMotorSpeed = 0;
 double P ;
 double I ;
@@ -78,7 +77,7 @@ void initialize()
     DDRC &= ~(1 << PC1);
     PORTC |= (1 << PC1);
     DDRD &= ~((1 << PD3) | (1 << PD4) | (1 << PD5)); //ADC analog sensors
-    PORTD |= 0b00111000;
+    PORTD |= 0b00000000;
 
 
 
@@ -113,9 +112,31 @@ void calculatePidError () {
      else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] < sensorCalib[1][0] && lineSensor[2] < sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
          error = 10 ;
      }
+     // line sensors = 1 1 1 0
+
+     else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] >= sensorCalib[1][0] && lineSensor[2] >= sensorCalib[2][0] && lineSensor[3] < sensorCalib[3][0] ) {
+         error = 10 ;
+     }
+     // line sensors = 1 1 0 1
+
+     else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] >= sensorCalib[1][0] && lineSensor[2] < sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
+         error = 10 ;
+     }
+
+     // line sensors = 1 0 1 1
+
+     else if (lineSensor[0] >= sensorCalib[0][0] && lineSensor[1] < sensorCalib[1][0] && lineSensor[2] >= sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
+         error = 10 ;
+     }
+
+     // line sensors = 0 1 1 1
+
+     else if (lineSensor[0] < sensorCalib[0][0] && lineSensor[1] >= sensorCalib[1][0] && lineSensor[2] >= sensorCalib[2][0] && lineSensor[3] >= sensorCalib[3][0] ) {
+         error = 10 ;
+     }
 
     //line sensors = 1 0 0 0
-    if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
+    else if (lineSensor[0] >= sensorCalib[0][2] && lineSensor[1] < sensorCalib[1][2] && lineSensor[2] < sensorCalib[2][2] && lineSensor[3] < sensorCalib[3][2]) {
         error = -3;
     }
     // line sensors = 1 1 0 0
@@ -211,16 +232,17 @@ void stopIntersection()
     // else if (canDirection == 1) { lcdPrint(str);}
     // else if (canDirection == 2) { lcdPrint(str);}
     sendToEV(canDirection);
+    _delay_ms(250);
+    idle();
     _delay_ms(10000);
     canDirection = -1;
 
-    idle();
 
 
 
 
     moveLCDCursor(0);
-    motor(500,500);
+    motor(400,400);
     _delay_ms(800);
 
 
@@ -252,17 +274,17 @@ void idle()
 
 void sendToEV(int canDirection)
 {
-    if (canDirection == 1) {
+    if (canDirection == 0) {
         PORTC &= ~(1 << PC4);
         PORTC |= (1 << PC5);
     }
-    else if (canDirection == 0) {
+    else if (canDirection == 1) {
         PORTC |= (1 << PC4);
         PORTC &= ~(1 << PC5);
     }
     else if (canDirection == 2) {
         PORTC |= (1 << PC4);
-        PORTC |= (1 << PC5);
+        PORTC &= ~(1 << PC5);
     }
     else {
         return;

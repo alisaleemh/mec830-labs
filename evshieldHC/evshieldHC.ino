@@ -18,12 +18,15 @@ uint8_t         bottom[8];
 uint8_t         right[8];
 uint8_t         direction;
 
+int blue = 1;
+int red = 0;
+int dropOffBool = 0;
 
 void leftCan() {
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
     SH_Direction_Reverse,
-    1, 120, SH_Completion_Wait_For,
+    1, 120, SH_Completion_Dont_Wait,
     SH_Next_Action_Brake
   );
     _delay_ms(1000);
@@ -62,7 +65,7 @@ void leftCan() {
 
       evshield.bank_a.motorRunDegrees(SH_Motor_2,
     SH_Direction_Reverse,
-    1, 120, SH_Completion_Wait_For,
+    1, 120, SH_Completion_Dont_Wait,
     SH_Next_Action_Brake
   );
 
@@ -124,7 +127,7 @@ void leftCan() {
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
         SH_Direction_Reverse,
-        1, 30, SH_Completion_Wait_For,
+        1, 30, SH_Completion_Dont_Wait,
         SH_Next_Action_Brake
     );
 
@@ -139,7 +142,7 @@ void leftCan() {
     _delay_ms(1000);
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
         SH_Direction_Forward,
-        1, 30, SH_Completion_Wait_For,
+        1, 30, SH_Completion_Dont_Wait,
         SH_Next_Action_Brake
     );
 
@@ -158,7 +161,7 @@ void leftCan() {
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
         SH_Direction_Reverse,
-        1, 30, SH_Completion_Wait_For,
+        1, 30, SH_Completion_Dont_Wait,
         SH_Next_Action_Brake
     );
 
@@ -175,7 +178,7 @@ void leftCan() {
 
     evshield.bank_a.motorRunDegrees(SH_Motor_2,
         SH_Direction_Forward,
-        1, 30, SH_Completion_Wait_For,
+        1, 30, SH_Completion_Dont_Wait,
         SH_Next_Action_Brake
     );
 
@@ -215,67 +218,30 @@ void setup()   {
 
 void loop(){
 
-  myCam.issueCommand('J'); // lock buffer
-  delay(500);
-
-  myCam.getBlobs(&nblobs, color, left, top, right, bottom);
-  delay(500);
-
-  myCam.issueCommand('K'); // unlock buffer
-
-  printString("number of blobs: ");
-  printWord(nblobs);
-  printString("\r\n");
-
-
-  uint8_t i;
-  for (int i = 0; i < nblobs; i++) {
-    if(color[i]==2)  {
-
-      printString("red blob found at: X: ");
-      printWord((left[i]+right[i])/2);
-      printString(" Y: ");
-      printWord((top[i]+bottom[i])/2);
-      printString("\r\n");
-      direction = ((left[i] + right[i]) /2);
-      printWord(direction);
-
-      if (((PINB & (1<<PB0)) == 1) & ((PINB & (1<<PB1)) == 1)){
-          red = 1;
-          blue = 0;
-          dropOff();
-      }
-
-
+    if (PINB & (1<<PB1))
+    {
+        if (dropOffBool == 1) {
+            dropOff();
+            _delay_ms(1000);
+            dropOffBool = 0;
+        }
+        else if (dropOffBool == 0){
+            leftCan();
+            _delay_ms(1000);
+            dropOffBool = 1;
+        }
     }
-
-    else if(color[i]==1)  {
-
-      printString("blue blob found at: X: ");
-      printWord((left[i]+right[i])/2);
-      printString(" Y: ");
-      printWord((top[i]+bottom[i])/2);
-      printString("\r\n");
-      direction = ((left[i] + right[i]) /2);
-      printWord(direction);
-
-      if (((PINB & (1<<PB0)) == 1) & ((PINB & (1<<PB1)) == 1)){
-          red = 0;
-          blue = 1;
-          dropOff();
-
-
+    else if (PINB & (1<<PB0))
+    {
+        if (dropOffBool == 0){
+            rightCan();
+            _delay_ms(1000);
+            dropOffBool = 1;
+        }
+        else if (dropOffBool == 1) {
+            dropOff();
+            _delay_ms(1000);
+            dropOffBool = 0;
+        }
     }
-}
-
-    if (((PINB & (1<<PB0)) == 1) & ((PINB & (1<<PB1)) == 0)){
-        leftCan();
-    }
-    else if (((PINB & (1<<PB0)) == 0) & ((PINB & (1<<PB1)) == 1)){
-        rightCan();
-    }
-
-    _delay_ms(1000);
-
-
 }
